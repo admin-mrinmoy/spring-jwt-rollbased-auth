@@ -92,3 +92,89 @@ A secure backend API where:
 ### 🚪 3. Accessing Protected API
 
 **Example**:
+GET /api/admin/dashboard
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR...
+
+**Files Involved**:
+- `JwtAuthFilter.java`
+- `JwtUtil.java`
+- `SecurityConfig.java`
+
+**Flow**:
+1. `JwtAuthFilter` intercepts the request.
+2. Extracts and validates the token from header.
+3. If valid, `JwtUtil` extracts username and roles.
+4. `CustomUserDetailsService` loads the user again.
+5. Spring sets authentication context with roles.
+
+✅ **Result**: User is authenticated and roles are attached.
+
+---
+
+### ✅ 4. Spring Security Role Access Check
+
+**File Involved**: `SecurityConfig.java`
+
+```java
+.authorizeHttpRequests()
+  .requestMatchers("/api/admin/**").hasRole("ADMIN")
+  .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+  .anyRequest().authenticated()
+Flow:
+
+Spring checks if the role from token (e.g., ROLE_ADMIN) matches the route.
+
+If yes → allow access.
+
+If not → return 403 Forbidden.
+
+##Flie Wise Summary##
+| File                                      | Summary                                                                                   |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `AuthController.java`                     | Main controller for `/signup` and `/login`. Talks to repo, auth manager, and JWT utility. |
+| `SignupRequest.java`, `LoginRequest.java` | Simple DTOs for mapping JSON to Java objects.                                             |
+| `User.java`                               | Entity mapped to DB, contains username, password, and roles.                              |
+| `UserRepository.java`                     | Interface to DB. Finds user by username.                                                  |
+| `CustomUserDetails.java`                  | Wraps `User` and implements Spring Security's `UserDetails`.                              |
+| `CustomUserDetailsService.java`           | Loads user from DB during login.                                                          |
+| `JwtUtil.java`                            | Creates/validates JWT. Extracts claims.                                                   |
+| `JwtAuthFilter.java`                      | Filter that validates the token and sets authenticated user in context.                   |
+| `SecurityConfig.java`                     | Main Spring Security config: filters, access rules, and auth provider.                    |
+| `SpringJwtAuthProjectApplication.java`    | Application entry point.                                                                  |
+
+#🎯 VISUAL FLOW SUMMARY#
+[Client] ----> /signup (SignupRequest)
+                |
+           [AuthController] --> save to DB (User, UserRepository)
+
+[Client] ----> /login (LoginRequest)
+                |
+           [AuthController] --> authenticate
+                |                     |
+       [AuthenticationManager]    [CustomUserDetailsService]
+                |                     |
+            if valid              return UserDetails
+                |
+             [JwtUtil] --> create token
+                |
+           return token to client
+
+[Client] ---> /api/admin/xxx (with token)
+               |
+         [JwtAuthFilter] intercepts
+               |
+           [JwtUtil] validates token
+               |
+     [CustomUserDetailsService] loads user again
+               |
+    [SecurityContext] updated with user + roles
+
+     → Controller runs only if role matches in [SecurityConfig]
+##🧠 Final Notes
+All passwords are securely encoded using BCrypt.
+
+Tokens are stateless: no DB call required to validate them (unless for user re-fetch).
+
+Easy to extend with more roles (e.g., MODERATOR, SUPERADMIN).
+
+Clean separation of concerns between controller, security, and utility.
