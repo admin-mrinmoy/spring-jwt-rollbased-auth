@@ -143,7 +143,7 @@ If not → return 403 Forbidden.
 | `SpringJwtAuthProjectApplication.java`    | Application entry point.                                                                  |
 
 #🎯 VISUAL FLOW SUMMARY#
-[Client] ----> /signup (SignupRequest)
+```[Client] ----> /signup (SignupRequest)
                 |
            [AuthController] --> save to DB (User, UserRepository)
 
@@ -169,7 +169,7 @@ If not → return 403 Forbidden.
                |
     [SecurityContext] updated with user + roles
 
-     → Controller runs only if role matches in [SecurityConfig]
+     → Controller runs only if role matches in [SecurityConfig]```
 ##🧠 Final Notes
 All passwords are securely encoded using BCrypt.
 
